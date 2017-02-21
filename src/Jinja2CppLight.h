@@ -19,6 +19,8 @@
 #include <stdexcept>
 #include <sstream>
 
+#include "stringhelper.h"
+
 #define VIRTUAL virtual
 #define STATIC static
 
