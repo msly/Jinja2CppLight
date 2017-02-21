@@ -70,13 +70,13 @@ Template &Template::setValue( std::string name, std::string value ) {
 std::string Template::render() {
 //    cout << "tempalte::render root=" << root << endl;
     size_t finalPos = eatSection(0, root );
-    cout << finalPos << " vs " << sourceCode.length() << endl;
+//    cout << finalPos << " vs " << sourceCode.length() << endl;
     if( finalPos != sourceCode.length() ) {
         root->print("");
         throw render_error("some sourcecode found at end: " + sourceCode.substr( finalPos ) );
     }
 //    cout << "tempalte::render root=" << root << endl;
-    root->print("");
+//    root->print("");
 //    cout << "tempalte::render root=" << root << endl;
     return root->render(valueByName);
 }
@@ -261,8 +261,10 @@ STATIC std::string Template::doSubstitutions( std::string sourceCode, std::map< 
         templatedString = splitSource[0];
     }
     for( size_t i = startI; i < splitSource.size(); i++ ) {
+        if (splitSource[i].size() <= 0)
+            continue;
         vector<string> thisSplit = split( splitSource[i], "}}" );
-        string name = trim( thisSplit[0] );
+        string name = trim( split( thisSplit[0], "|" )[0] );
 //        cout << "name: " << name << endl;
         if( valueByName.find( name ) == valueByName.end() ) {
             throw render_error( "name " + name + " not defined" );
