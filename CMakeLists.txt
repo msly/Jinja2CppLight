@@ -1,69 +1,50 @@
 cmake_minimum_required(VERSION 2.8)
+project(Jinja2CppLight)
 
-if (NOT CMAKE_BUILD_TYPE)
-    message("Setting build type to 'RelWithDebInfo'")
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+# 设置编译参数
+if(NOT ${CMAKE_VERSION} LESS 3.2)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+else()
+    message(STATUS "Checking compiler flags for C++11 support.")
+    # Set C++11 support flags for various compilers
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+    if(COMPILER_SUPPORTS_CXX11)
+        message(STATUS "C++11 is supported.")
+        if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
+        else()
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+        endif()
+    elseif(COMPILER_SUPPORTS_CXX0X)
+        message(STATUS "C++0x is supported.")
+        if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -stdlib=libc++")
+        else()
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+        endif()
+    else()
+        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    endif()
 endif()
 
-if(UNIX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")                     # 调试信息
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")                # 开启所有警告
+
+# 设置为MT
+if (WIN32)
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -MT")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -MTd")
 endif()
 
-# https://cmake.org/Wiki/CMake_RPATH_handling
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-SET(CMAKE_MACOSX_RPATH TRUE)
+# 设置lib,bin输出目录
+set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
-include_directories(.)
-include_directories(src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-add_library(Jinja2CppLight SHARED src/Jinja2CppLight.cpp src/stringhelper.cpp)
+add_library(${PROJECT_NAME} STATIC src/Jinja2CppLight.cpp src/stringhelper.cpp)
 
-INSTALL(TARGETS Jinja2CppLight
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-if(BUILD_Jinja2CppLight_TESTS)
-  if(UNIX)
-	    add_library(jinja2cpplight_gtest SHARED thirdparty/gtest/gtest-all.cc)
-	    target_link_libraries(jinja2cpplight_gtest pthread)
-	else()
-	    add_library(jinja2cpplight_gtest thirdparty/gtest/gtest-all.cc)
-	endif()
-	target_include_directories(jinja2cpplight_gtest PRIVATE thirdparty/gtest)
-	
-	add_executable(jinja2cpplight_unittests thirdparty/gtest/gtest_main.cc test/testJinja2CppLight.cpp test/teststringhelper.cpp)
-	target_link_libraries(jinja2cpplight_unittests jinja2cpplight_gtest)
-	target_link_libraries(jinja2cpplight_unittests Jinja2CppLight)
-	target_include_directories(jinja2cpplight_unittests PRIVATE thirdparty/gtest)
-	
-	INSTALL(TARGETS jinja2cpplight_gtest jinja2cpplight_unittests
-	  LIBRARY DESTINATION lib
-	  ARCHIVE DESTINATION lib
-	  RUNTIME DESTINATION bin
-	)
-endif()
-
-if(BUILD_Jinja2CppLight_PYTHON)
-	execute_process(COMMAND python -V ERROR_VARIABLE python_test)
-	if(${python_test} MATCHES "Python 2\\.7\\..*")
-	    #message("Python 2.7 found")
-	    OPTION(PYTHON_AVAILABLE "Facilitates development, not needed for normal build." ON)
-	else()
-	    OPTION(PYTHON_AVAILABLE "Facilitates development, not needed for normal build." OFF)
-	endif()
-	
-	if(PYTHON_AVAILABLE)
-	    add_custom_target(
-	        cog
-	        python ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/cogapp/cog.py -q -I ${CMAKE_CURRENT_SOURCE_DIR}/cog-batteries -r ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/test/*.h
-	    )
-	    add_dependencies(Jinja2CppLight cog)
-	endif(PYTHON_AVAILABLE)
-endif()
-
-
-
-
+set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src CACHE INTERNAL "")
