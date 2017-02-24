@@ -47,4 +47,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 add_library(${PROJECT_NAME} STATIC src/Jinja2CppLight.cpp src/stringhelper.cpp)
 
+# 设置外部调用
 set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src CACHE INTERNAL "")
+set(${PROJECT_NAME}_LIBRARIES ${PROJECT_NAME} CACHE INTERNAL "")
